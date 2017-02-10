@@ -318,6 +318,12 @@ public final class SearchFragment extends AbstractFragment implements
         final List<SearchResult> filteredList = fsr.filtered;
 
         fileTypeCounter.add(fsr);
+
+        // if it's a fresh search, make sure to clear keyword detector
+        if (adapter.getCount() == 0) {
+            resetKeywordDetector(adapter.getFileType());
+        }
+
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

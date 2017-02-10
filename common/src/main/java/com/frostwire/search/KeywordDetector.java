@@ -41,6 +41,12 @@ public final class KeywordDetector {
         SEARCH_SOURCE
     }
 
+    public enum Mode {
+        INACTIVE,
+        INCLUSIVE,
+        EXCLUSIVE
+    }
+
     private static Logger LOG = Logger.getLogger(KeywordDetector.class);
     private static final Set<String> stopWords = new HashSet<>();
     private final Map<Feature, HistoHashMap<String>> histograms;
@@ -154,7 +160,7 @@ public final class KeywordDetector {
 
     static {
         // english
-        feedStopWords("a", "an", "and", "are", "as", "at", "be", "by", "for");
+        feedStopWords("-","a", "an", "and", "are", "as", "at", "be", "by", "for");
         feedStopWords("from", "has", "he", "in", "is", "it", "its", "of", "on");
         feedStopWords("that", "the", "to", "that", "this");
         // TODO: Add more here as we start testing and getting noise
