@@ -2,7 +2,6 @@
 <!--
 /*
  * Created by Angel Leon (@gubatron), Alden Torres (aldenml),
- * Marcelina Knitter (@marcelinkaaa)
  * Copyright (c) 2011-2017, FrostWire(R). All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,20 +19,11 @@
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
     <item
-        android:id="@+id/fragment_browse_peer_menu_filter"
-        android:icon="@drawable/ic_action_search"
-        android:orderInCategory="1"
+        android:id="@+id/fragment_search_menu_filter"
+        android:icon="@drawable/action_bar_search_filter"
+        android:orderInCategory="2"
         android:title="@string/type_to_filter_results"
         app:showAsAction="collapseActionView|always"
-        app:actionViewClass="android.support.v7.widget.SearchView"/>
-    <item
-        android:id="@+id/fragment_browse_peer_menu_checkbox"
-        android:checkable="true"
-        android:icon="@drawable/action_bar_checkbox"
-        android:orderInCategory="2"
-        android:title="@string/select_all"
-        app:showAsAction="always" />
-
+        />
 </menu>

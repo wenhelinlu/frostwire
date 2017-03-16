@@ -1,6 +1,7 @@
 /*
- * Created by Angel Leon (@gubatron), Alden Torres (aldenml)
- * Copyright (c) 2011-2016, FrostWire(R). All rights reserved.
+ * Created by Angel Leon (@gubatron), Alden Torres (aldenml),
+ * Marcelina Knitter (@marcelinkaaa)
+ * Copyright (c) 2011-2017, FrostWire(R). All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +24,21 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.FrameLayout;
@@ -60,7 +70,6 @@ import com.frostwire.android.gui.util.UIUtils;
 import com.frostwire.android.gui.views.AbstractDialog.OnDialogClickListener;
 import com.frostwire.android.gui.views.AbstractFragment;
 import com.frostwire.android.gui.views.ClickAdapter;
-import com.frostwire.android.gui.views.KeywordDetectorView;
 import com.frostwire.android.gui.views.PromotionsView;
 import com.frostwire.android.gui.views.RichNotification;
 import com.frostwire.android.gui.views.RichNotificationActionLink;
@@ -115,12 +124,14 @@ public final class SearchFragment extends AbstractFragment implements
     private PromotionsView promotions;
     private SearchProgressView searchProgress;
     private ListView list;
+    private MenuItem filterItem;
+    private Drawable filterItemIcon;
     private String currentQuery;
     private final FileTypeCounter fileTypeCounter;
     private final SparseArray<Byte> toTheRightOf = new SparseArray<>(6);
     private final SparseArray<Byte> toTheLeftOf = new SparseArray<>(6);
     private final Map<Integer, KeywordDetector> keywordDetectors;
-    private KeywordDetectorView keywordDetectorView;
+    private int deleteMeCounter;
 
     public SearchFragment() {
         super(R.layout.fragment_search);
@@ -139,6 +150,7 @@ public final class SearchFragment extends AbstractFragment implements
         toTheLeftOf.put(Constants.FILE_TYPE_DOCUMENTS, Constants.FILE_TYPE_APPLICATIONS);
         toTheLeftOf.put(Constants.FILE_TYPE_TORRENTS, Constants.FILE_TYPE_DOCUMENTS);
         keywordDetectors = new HashMap<>();
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -244,7 +256,6 @@ public final class SearchFragment extends AbstractFragment implements
             }
         });
         list = findView(view, R.id.fragment_search_list);
-        keywordDetectorView = findView(view, R.id.fragment_search_keyword_detector_view);
 
         SwipeLayout swipe = findView(view, R.id.fragment_search_swipe);
         swipe.setOnSwipeListener(new SwipeLayout.OnSwipeListener() {
@@ -261,6 +272,88 @@ public final class SearchFragment extends AbstractFragment implements
         showSearchView(view);
         showRatingsReminder(view);
     }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.fragment_search_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+        initFilterMenuItem(menu);
+    }
+
+    /**
+     * This is the menu item that responds dynamically to the automatically detected search tags
+     * @param menu
+     */
+    private void initFilterMenuItem(Menu menu) {
+        filterItem = menu.findItem(R.id.fragment_search_menu_filter);
+        filterItemIcon = filterItem.getIcon();
+        filterItem.setVisible(true);
+        filterItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                LOG.info("Show/hide filter drawer");
+                LOG.info("Action view: " + item.getActionView());
+                updateFilterMenuItem(true, ++deleteMeCounter);
+                return true;
+            }
+        });
+    }
+
+    /** Get a BitmapDrawable we can reuse out of the given drawable */
+    private BitmapDrawable toBitmapDrawable(Drawable filterItemIcon) {
+        int width = filterItemIcon.getIntrinsicWidth();
+        width = width > 0 ? width : 1;
+        int height = filterItemIcon.getIntrinsicHeight();
+        height = height > 0 ? height : 1;
+
+        BitmapDrawable result = new BitmapDrawable(getActivity().getResources(), Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888));
+        Canvas canvas = new Canvas(result.getBitmap());
+        filterItemIcon.setBounds(0, 0, width, height);
+        filterItemIcon.draw(canvas);
+        return result;
+    }
+
+    private void updateFilterMenuItem(boolean visible, final int count) {
+        if (filterItem == null) {
+            return;
+        }
+
+        filterItem.setVisible(visible);
+
+        if (!visible) {
+            return;
+        }
+
+        if (count == 0) {
+            filterItem.setIcon(filterItemIcon);
+        } else if (count > 0 && filterItemIcon != null) {
+            Engine.instance().getThreadPool().submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            // draw in the background
+                            Bitmap baseBitmap = toBitmapDrawable(filterItemIcon).getBitmap();
+                            final BitmapDrawable updatedBitmapDrawable = new BitmapDrawable(getActivity().getResources(), baseBitmap);
+                            Canvas canvas = new Canvas(baseBitmap);
+                            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                            paint.setColor(Color.WHITE);
+                            paint.setTextSize(25.0f);
+                            canvas.drawText(String.valueOf(count), 15, 20, paint);
+                            updatedBitmapDrawable.draw(canvas);
+
+                            // update UI thread when done
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    filterItem.setIcon(updatedBitmapDrawable);
+                                }
+                            });
+
+                        }
+                    });
+        }
+    }
+
 
     private void startMagnetDownload(String magnet) {
         UIUtils.showLongMessage(getActivity(), R.string.torrent_url_added);
@@ -343,9 +436,13 @@ public final class SearchFragment extends AbstractFragment implements
             keywordDetector = new KeywordDetector(Engine.instance().getThreadPool());
             keywordDetectors.put(fileType, keywordDetector);
         }
+/**
+ * TODO: update the keywordDetectorListener
         if (keywordDetectorView != null) {
+
             keywordDetector.setKeywordDetectorListener(keywordDetectorView);
         }
+*/
         for (SearchResult sr : results) {
             keywordDetector.addSearchTerms(KeywordDetector.Feature.SEARCH_SOURCE, sr.getSource());
             if (sr instanceof FileSearchResult) {

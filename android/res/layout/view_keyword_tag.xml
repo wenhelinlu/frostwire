@@ -16,11 +16,4 @@
         android:layout_height="wrap_content"
         android:text="[barMode]"
         />
-    <ImageButton
-        android:id="@+id/view_keyword_remove"
-        android:src="@drawable/remove_transfer"
-        android:layout_marginLeft="3dp"
-        android:layout_gravity="center_vertical"
-        android:layout_width="10dp"
-        android:layout_height="10dp"/>
 </LinearLayout>

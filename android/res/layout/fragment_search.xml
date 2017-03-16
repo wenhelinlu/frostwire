@@ -87,9 +87,4 @@
                 android:fastScrollEnabled="true"/>
         </FrameLayout>
     </com.frostwire.android.gui.views.SwipeLayout>
-
-    <com.frostwire.android.gui.views.KeywordDetectorView
-        android:id="@+id/fragment_search_keyword_detector_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
 </LinearLayout>
